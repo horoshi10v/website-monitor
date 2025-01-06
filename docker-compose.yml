@@ -69,7 +69,7 @@ services:
 
     mongo:
         image: mongo:4.4.4
-        container_name: mongo_${PROJECT}
+        container_name: mongo_${PROJECT_SERVER}
         restart: always
         environment:
             - MONGO_INITDB_ROOT_USERNAME=admin
