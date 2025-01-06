@@ -1,0 +1,20 @@
+server {
+	server_name ${HOST};
+	root ${NGINX_ROOT};
+
+	listen 80;
+
+	location / {
+		proxy_pass http://client:3000;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+	}
+
+	error_log /var/log/nginx/project_error.log;
+	access_log /var/log/nginx/project_access.log;
+
+	client_max_body_size 2000m;
+}

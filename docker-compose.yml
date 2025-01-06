@@ -1,49 +1,83 @@
-version: '3'
+version: "3"
 
 services:
-  mongo:
-    image: mongo:6.0
-    container_name: mongo
-    environment:
-      MONGO_INITDB_DATABASE: monitor
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - app_network
+    nginx_client:
+        image: nginx:alpine
+        container_name: nginx_${PROJECT_CLIENT}
+        ports:
+            - 80
+        environment:
+            - VIRTUAL_HOST=${VIRTUAL_HOST_CLIENT}
+            - LETSENCRYPT_HOST=${VIRTUAL_HOST_CLIENT}
+            - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL_CLIENT}
+            - HOST=${VIRTUAL_HOST_CLIENT}
+            - NGINX_ROOT=${NGINX_ROOT_CLIENT}
+        depends_on:
+            - client
+        env_file:
+            - .env
+        volumes:
+            - "./nginx/client.template:/etc/nginx/templates/default.conf.template"
+            - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+            - "${APP_DIR_CLIENT}:/var/www/html"
+        restart: always
 
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: server
-    env_file:
-      - ./server/.env
-    depends_on:
-      - mongo
-    ports:
-      - "3002:3002"
-    networks:
-      - app_network
+    nginx_server:
+        image: nginx:alpine
+        container_name: nginx_${PROJECT_SERVER}
+        ports:
+            - 80
+        environment:
+            - VIRTUAL_HOST=${VIRTUAL_HOST_SERVER}
+            - LETSENCRYPT_HOST=${VIRTUAL_HOST_SERVER}
+            - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL_SERVER}
+            - HOST=${VIRTUAL_HOST_SERVER}
+            - NGINX_ROOT=${NGINX_ROOT_SERVER}
+        depends_on:
+            - server
+        env_file:
+            - .env
+        volumes:
+            - "./nginx/server.template:/etc/nginx/templates/default.conf.template"
+            - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+            - "${APP_DIR_SERVER}:/var/www/html"
+        restart: always
 
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    container_name: client
-    env_file:
-      - ./client/.env
-    depends_on:
-      - server
-    ports:
-      - "3000:3000"
-    networks:
-      - app_network
+    mongo:
+        image: mongo:6.0
+        container_name: mongo
+        environment:
+            MONGO_INITDB_DATABASE: monitor
+        ports:
+            - "27017:27017"
+        volumes:
+            - ./mongo_data:/data/db
 
-volumes:
-  mongo_data:
+    server:
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+        container_name: server
+        env_file:
+            - ./server/.env
+        depends_on:
+            - mongo
+        ports:
+            - "3002:3002"
+
+    client:
+        build:
+            context: ./client
+            dockerfile: Dockerfile
+        container_name: client
+        env_file:
+            - ./client/.env
+        depends_on:
+            - server
+        ports:
+            - "3000:3000"
 
 networks:
-  app_network:
-    driver: bridge
+    default:
+        external:
+            name: nginx-proxy
