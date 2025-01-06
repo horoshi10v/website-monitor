@@ -43,16 +43,6 @@ services:
             - "${APP_DIR_SERVER}:/var/www/html"
         restart: always
 
-    mongo:
-        image: mongo:6.0
-        container_name: mongo
-        environment:
-            MONGO_INITDB_DATABASE: monitor
-        ports:
-            - "27017:27017"
-        volumes:
-            - ./mongo_data:/data/db
-
     server:
         build:
             context: ./server
@@ -76,6 +66,20 @@ services:
             - server
         ports:
             - "3000:3000"
+
+    mongo:
+        image: mongo:4.4.4
+        container_name: mongo_${PROJECT}
+        restart: always
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=admin
+            - MONGO_INITDB_ROOT_PASSWORD=tdqKDSyonST1kAOm
+            - MONGO_REPLICA_HOST=mongo_${PROJECT}
+        ports:
+            - 27020:27020
+        volumes:
+            - ./mongo:/data/db
+        command: mongod --port 27020
 
 networks:
     default:
